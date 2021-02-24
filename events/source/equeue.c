@@ -407,9 +407,10 @@ void equeue_post_user_allocated(equeue_t *q, void (*cb)(void *), void *p)
     equeue_sema_signal(&q->eventsema);
 }
 
+static int current_dispatch_id = 0;
 bool equeue_cancel(equeue_t *q, int id)
 {
-    if (!id) {
+    if (!id || current_dispatch_id == id) {
         return false;
     }
 
@@ -496,10 +497,12 @@ void equeue_dispatch(equeue_t *q, int ms)
             es = e->next;
 
             // actually dispatch the callbacks
+            current_dispatch_id = equeue_event_id(q, e);
             void (*cb)(void *) = e->cb;
             if (cb) {
                 cb(e + 1);
             }
+            current_dispatch_id = 0;
 
             // reenqueue periodic events or deallocate
             if (e->period >= 0) {
