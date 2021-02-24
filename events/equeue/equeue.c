@@ -217,11 +217,17 @@ void equeue_dealloc(equeue_t *q, void *p) {
     equeue_mem_dealloc(q, e);
 }
 
+// equeue scheduling functions
+static int equeue_event_id(equeue_t *q, struct equeue_event *e)
+{
+    // setup event and hash local id with buffer offset for unique id
+    return ((unsigned)e->id << q->npw2) | ((unsigned char *)e - q->buffer);
+}
 
 // equeue scheduling functions
 static int equeue_enqueue(equeue_t *q, struct equeue_event *e, unsigned tick) {
     // setup event and hash local id with buffer offset for unique id
-    int id = (e->id << q->npw2) | ((unsigned char *)e - q->buffer);
+    int id = equeue_event_id(q, e);
     e->target = tick + equeue_clampdiff(e->target, tick);
     e->generation = q->generation;
 
